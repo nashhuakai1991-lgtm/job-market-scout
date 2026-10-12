@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 抓取产物（每次运行生成，不应入库）
+out/
+raw/
+jobs.json
+analysis.json
+career.json
+profile.json
+
+# 登录态 / 浏览器 profile —— 含站点 Cookie 与令牌，绝不可提交
+profile/
+**/profile/
+**/*profile*/
+chromium-profile/
+.playwright/
+
+# 报告产物（示例目录下的报告是刻意保留的，用 ! 放行）
+report.html
+report.md
+!examples/**/report.html
+!examples/**/report.md
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.log
+*.tmp

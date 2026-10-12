@@ -1,0 +1,57 @@
+interface:
+  display_name: "Job Market Scout"
+  short_description: "抓取真实招聘岗位并结合求职者画像做匹配打分与薪资校准建议"
+  default_prompt: "用 $job-market-scout 抓取我所在城市这个岗位的真实招聘数据，并分析薪资期望是否合理、我该补哪些能力。"
+skill:
+  inputs:
+    - name: keyword
+      type: string[]
+      required: true
+      description: 职位关键词，可多个，如 ["Java开发", "后端工程师"]
+    - name: city
+      type: string
+      required: true
+      description: 目标城市，如 "北京"
+    - name: degree
+      type: string
+      required: false
+      description: 最高学历，如 "本科"
+    - name: experience_years
+      type: number
+      required: false
+      description: 工作年限
+    - name: expect_salary
+      type: number
+      required: false
+      description: 期望月薪（元）
+    - name: skills
+      type: string[]
+      required: false
+      description: 技能栈，如 ["Java", "Spring"]
+    - name: pages
+      type: integer
+      required: false
+      description: 每个关键词抓取页数，默认 3
+  outputs:
+    - name: jobs_json
+      type: file
+      description: 结构化岗位数据 out/jobs.json
+    - name: analysis_json
+      type: file
+      description: 匹配分析结果 out/analysis.json
+    - name: report_md
+      type: file
+      description: Markdown 报告底稿 out/report.md
+    - name: report_html
+      type: file
+      description: 单文件 HTML 报告 out/report.html
+compatibility:
+  canonical_format: "agent-skills"
+  activation:
+    mode: "auto"
+  execution:
+    context: "inline"
+    shell: "bash"
+  trust:
+    source_tier: "local"
+    remote_inline_execution: "forbid"

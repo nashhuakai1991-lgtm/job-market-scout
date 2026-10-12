@@ -1,0 +1,88 @@
+{
+  "name": "job-market-scout",
+  "version": "2.0.0",
+  "owner": "WorkBuddy",
+  "updated_at": "2026-10-11",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "quarterly",
+  "category": "research",
+  "complexity_tier": "complex",
+  "factory_components": [
+    "references",
+    "scripts",
+    "evals"
+  ],
+  "verified_platforms": [
+    {
+      "name": "智联招聘",
+      "mode": "免登录",
+      "fields": "完整",
+      "status": "verified-2026-10-11"
+    },
+    {
+      "name": "前程无忧",
+      "mode": "免登录",
+      "fields": "完整",
+      "status": "verified-2026-10-11"
+    },
+    {
+      "name": "中国公共招聘网(人社部)",
+      "mode": "免登录",
+      "fields": "有限",
+      "status": "verified-2026-10-11"
+    },
+    {
+      "name": "BOSS直聘",
+      "mode": "需登录",
+      "fields": "完整",
+      "status": "login-gated"
+    },
+    {
+      "name": "猎聘",
+      "mode": "强风控",
+      "fields": "无",
+      "status": "unavailable"
+    },
+    {
+      "name": "脉脉",
+      "mode": "强制登录",
+      "fields": "无",
+      "status": "unavailable"
+    },
+    {
+      "name": "领英",
+      "mode": "网络不可达",
+      "fields": "无",
+      "status": "unavailable"
+    },
+    {
+      "name": "拉勾",
+      "mode": "captcha",
+      "fields": "无",
+      "status": "unavailable"
+    },
+    {
+      "name": "城市人才网",
+      "mode": "域名不稳定",
+      "fields": "无",
+      "status": "unavailable"
+    },
+    {
+      "name": "公司官网招聘页",
+      "mode": "SPA空壳/跳转",
+      "fields": "无",
+      "status": "unavailable"
+    }
+  ],
+  "capabilities": [
+    "多源岗位采集",
+    "薪资分位分析",
+    "匹配打分",
+    "胜任度评估",
+    "职业规划",
+    "数据源状态披露"
+  ]
+}
