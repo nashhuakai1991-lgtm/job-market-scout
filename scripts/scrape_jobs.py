@@ -1135,11 +1135,9 @@ def main() -> None:
     args = ap.parse_args()
 
     chrome = detect_chrome(args.chrome)
-    out_dir = Path(args.out)
-    raw_dir = out_dir / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    profile = args.profile or str(out_dir / "profile")
 
+    # --check-sources 是只读自检,必须在创建任何目录之前返回,
+    # 否则会在当前工作目录留下空的 out/ 与 raw/ 目录
     if args.check_sources:
         log("数据源可用性(静态声明,基于实测结论):")
         for key, site in SITES.items():
@@ -1150,6 +1148,11 @@ def main() -> None:
         for key, info in UNAVAILABLE_SOURCES.items():
             log(f"  {info['name']:22} 原因: {info['reason']}")
         return
+
+    out_dir = Path(args.out)
+    raw_dir = out_dir / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    profile = args.profile or str(out_dir / "profile")
 
     if args.login:
         run_login(chrome, profile, (args.site or ["zhipin"])[0])
