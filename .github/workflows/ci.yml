@@ -49,11 +49,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 数据源自检(不依赖 playwright)
+      # runner 本身就是「未安装 playwright」的裸环境,
+      # 因此本步骤同时验证了 scrape_jobs.py 的惰性导入是否生效。
+      # scripts/check_no_playwright.py 是给本地开发用的等价模拟,不进 CI
+      # (子进程屏蔽 import 的做法在跨平台环境下反而脆弱)。
+      - name: 数据源自检(runner 无 playwright,顺带验证惰性导入)
         run: python scripts/scrape_jobs.py --check-sources
-
-      - name: 裸环境兼容性(无 playwright 也能自检)
-        run: python scripts/check_no_playwright.py
 
       - name: README 内部链接校验
         run: |
