@@ -7,12 +7,13 @@ venv/
 env/
 
 # 抓取产物（每次运行生成，不应入库）
+# 用前导 / 只匹配仓库根，避免误伤 examples/ 下的同名示例文件
 out/
 raw/
-jobs.json
-analysis.json
-career.json
-profile.json
+/jobs.json
+/analysis.json
+/career.json
+/profile.json
 
 # 登录态 / 浏览器 profile —— 含站点 Cookie 与令牌，绝不可提交
 profile/
@@ -21,11 +22,14 @@ profile/
 chromium-profile/
 .playwright/
 
-# 报告产物（示例目录下的报告是刻意保留的，用 ! 放行）
+# 报告产物
 report.html
 report.md
-!examples/**/report.html
-!examples/**/report.md
+
+# examples/ 是刻意保留的真实案例，需从上面的忽略规则里放行
+# （否则 examples/**/career.json 会被 /career.json 之类的规则误伤）
+!examples/
+!examples/**
 
 # 编辑器与系统
 .vscode/
