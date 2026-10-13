@@ -28,18 +28,49 @@ SKIP_PREFIX = ("http://", "https://", "mailto:")
 
 
 def tracked_files() -> set[str]:
-    """从 git 索引取出全部受版本控制的文件路径(NFC 归一)。"""
-    out = subprocess.run(["git", "ls-files", "-z"],
-                         capture_output=True, cwd=ROOT).stdout
-    paths = set()
-    for raw in out.split(b"\0"):
+    """从 git 索引取出全部受版本控制的文件路径(NFC 归一)。
+
+    注意两个 CI 上的坑:
+      1. `safe.directory` —— runner 的 checkout 目录属主与执行用户可能不一致,
+         git 会以「detected dubious ownership」拒绝操作,stdout 为空。
+         这里显式放开,并在结果为空时给出可读诊断。
+      2. 拿到空集合时不能直接判定「全部链接失效」——那会让本检查变成噪声源,
+         必须与文件系统互相印证。
+    """
+    proc = subprocess.run(
+        ["git", "-c", "safe.directory=*", "ls-files", "-z"],
+        capture_output=True, cwd=ROOT,
+    )
+    paths: set[str] = set()
+    for raw in proc.stdout.split(b"\0"):
         if not raw:
             continue
         try:
             paths.add(unicodedata.normalize("NFC", raw.decode("utf-8")))
         except UnicodeDecodeError:
             paths.add(raw.decode("utf-8", "surrogateescape"))
+
+    if not paths:
+        err = proc.stderr.decode("utf-8", "replace").strip()
+        print(f"  ⚠️  git ls-files 未返回任何结果(rc={proc.returncode})")
+        if err:
+            print(f"     git stderr: {err.splitlines()[0]}")
+        print("     回退到文件系统判定")
+        return fs_files()
     return paths
+
+
+def fs_files() -> set[str]:
+    """文件系统兜底:遍历仓库内所有文件(跳过 .git 与 __pycache__)。"""
+    out: set[str] = set()
+    for p in ROOT.rglob("*"):
+        if not p.is_file():
+            continue
+        if ".git" in p.parts or "__pycache__" in p.parts:
+            continue
+        out.add(unicodedata.normalize("NFC", p.relative_to(ROOT).as_posix()))
+    return out
+
 
 
 def check(doc: Path, tracked: set[str]) -> int:
@@ -53,7 +84,7 @@ def check(doc: Path, tracked: set[str]) -> int:
         if target not in tracked:
             bad.append(link)
 
-    print(f"{doc.name}: 检查 {checked} 条本地链接,仓库受控文件 {len(tracked)} 个")
+    print(f"{doc.name}: 检查 {checked} 条本地链接,索引内文件 {len(tracked)} 个")
     if not bad:
         print("  ✅ 全部有效")
         return 0
