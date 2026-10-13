@@ -37,7 +37,13 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from playwright.sync_api import sync_playwright
+# playwright 只在真正抓取时才需要,故惰性导入。
+# 这样 --check-sources(纯静态声明)与 --help 在未安装 playwright 的环境中也能运行,
+# 便于 CI 与快速自检。
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:  # pragma: no cover
+    sync_playwright = None
 
 # ---------------------------------------------------------------- 常量与映射
 
@@ -1153,6 +1159,12 @@ def main() -> None:
     raw_dir = out_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     profile = args.profile or str(out_dir / "profile")
+
+    if sync_playwright is None:
+        raise SystemExit(
+            "缺少 playwright 依赖。请先安装:\n"
+            "  pip install playwright\n"
+            "（仅 --check-sources 与 --help 不需要该依赖）")
 
     if args.login:
         run_login(chrome, profile, (args.site or ["zhipin"])[0])
