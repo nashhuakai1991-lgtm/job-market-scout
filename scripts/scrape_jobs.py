@@ -164,6 +164,10 @@ def clean(text: str | None) -> str | None:
 
 
 def detect_chrome(cli_path: str | None) -> str:
+    """定位 chromium 可执行文件(跨平台)。
+
+    顺序:显式 --chrome > 内置默认路径 > ms-playwright 缓存目录下的任意 chromium。
+    """
     if cli_path:
         p = Path(cli_path)
         if p.exists():
@@ -171,11 +175,30 @@ def detect_chrome(cli_path: str | None) -> str:
         raise SystemExit(f"指定的浏览器不存在: {cli_path}")
     if Path(DEFAULT_CHROME).exists():
         return DEFAULT_CHROME
-    # 回退:ms-playwright 下任意 chromium
-    base = Path.home() / "AppData/Local/ms-playwright"
-    for cand in sorted(base.glob("chromium-*/chrome-win64/chrome.exe"), reverse=True):
-        return str(cand)
-    raise SystemExit("未找到 chromium。请先装 playwright chromium 或用 --chrome 指定浏览器路径。")
+
+    # ms-playwright 缓存目录:按平台区分文件名
+    home = Path.home()
+    if sys.platform.startswith("win"):
+        bases = [home / "AppData" / "Local" / "ms-playwright"]
+        patterns = ["chromium-*/chrome-win64/chrome.exe",
+                    "chromium-*/chrome-win/chrome.exe"]
+    elif sys.platform == "darwin":
+        bases = [home / "Library" / "Caches" / "ms-playwright"]
+        patterns = ["chromium-*/chrome-mac*/Chromium.app/Contents/MacOS/Chromium"]
+    else:
+        bases = [home / ".cache" / "ms-playwright"]
+        patterns = ["chromium-*/chrome-linux*/chrome"]
+
+    for base in bases:
+        for pat in patterns:
+            for cand in sorted(base.glob(pat), reverse=True):
+                if cand.exists():
+                    return str(cand)
+
+    raise SystemExit(
+        "未找到 chromium。请先执行 `playwright install chromium`,"
+        "或用 --chrome 指定浏览器路径。")
+
 
 
 def is_logged_in(page) -> bool:
@@ -1140,10 +1163,9 @@ def main() -> None:
     ap.add_argument("--headless", default="1", help="1=无头(默认) 0=有头")
     args = ap.parse_args()
 
-    chrome = detect_chrome(args.chrome)
-
-    # --check-sources 是只读自检,必须在创建任何目录之前返回,
-    # 否则会在当前工作目录留下空的 out/ 与 raw/ 目录
+    # --check-sources 是纯静态自检:既不需要浏览器,也不需要 playwright。
+    # 必须放在 detect_chrome() 之前 —— 后者在找不到 chromium 时会 SystemExit(1),
+    # 那会让本命令在任何未装浏览器的环境(CI runner 等)恒定失败。
     if args.check_sources:
         log("数据源可用性(静态声明,基于实测结论):")
         for key, site in SITES.items():
@@ -1154,6 +1176,8 @@ def main() -> None:
         for key, info in UNAVAILABLE_SOURCES.items():
             log(f"  {info['name']:22} 原因: {info['reason']}")
         return
+
+    chrome = detect_chrome(args.chrome)
 
     # 依赖检查必须早于建目录:否则在缺 playwright 的环境里
     # 一次失败的抓取尝试也会留下空的 out/ 与 raw/
