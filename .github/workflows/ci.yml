@@ -8,64 +8,52 @@ on:
   workflow_dispatch:
 
 jobs:
-  check:
-    name: 语法与触发词评测
+  # ---- 门禁:语法 + 触发词评测 ----
+  gate:
+    name: 门禁（语法 + 触发词评测）
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: 脚本语法检查
-        run: |
-          python -m compileall -q scripts/
-
-      - name: 触发词评测(门禁)
+        run: python -m compileall -q scripts/
+      - name: 触发词评测
         run: python scripts/eval_triggers.py
 
-      - name: 产出评测报告
-        if: always()
-        run: |
-          python scripts/eval_triggers.py --json > trigger-eval.json || true
-          cat trigger-eval.json
-
-      - name: 上传评测产物
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trigger-eval
-          path: trigger-eval.json
-          if-no-files-found: ignore
-
-  selfcheck:
-    name: 数据源与文档自检
+  # ---- 数据源自检(runner 无 playwright,同时验证惰性导入) ----
+  sources:
+    name: 数据源自检
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      # runner 本身就是「未安装 playwright」的裸环境,
-      # 因此本步骤同时验证了 scrape_jobs.py 的惰性导入是否生效。
-      # scripts/check_no_playwright.py 是给本地开发用的等价模拟,不进 CI
-      # (子进程屏蔽 import 的做法在跨平台环境下反而脆弱)。
-      - name: 数据源自检(runner 无 playwright,顺带验证惰性导入)
+      - name: 数据源自检
         run: python scripts/scrape_jobs.py --check-sources
 
+  # ---- 文档链接校验 ----
+  docs:
+    name: 文档链接校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: README 内部链接校验
         run: python scripts/check_docs.py
 
+  # ---- 安全守卫 ----
+  safety:
+    name: 安全守卫（登录态 / 敏感内容）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: 确认未提交登录态与产物
-        run: |
-          if [ -d profile ] || [ -d out ] || [ -d raw ]; then
-            echo "检测到不应入库的目录(profile/out/raw),拒绝通过"; exit 1
-          fi
-          # 三个关键词都用 [x]xx 形式断开,否则 pattern 本身会被本文件匹配到
-          if grep -rIlE "[a]ccessToken|[r]efreshToken|[c]lientToken" --exclude-dir=.git . ; then
-            echo "检测到疑似令牌内容,拒绝通过"; exit 1
-          fi
-          echo "无登录态与敏感内容"
+        run: python scripts/check_safety.py

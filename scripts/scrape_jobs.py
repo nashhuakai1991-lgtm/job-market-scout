@@ -1155,16 +1155,18 @@ def main() -> None:
             log(f"  {info['name']:22} 原因: {info['reason']}")
         return
 
-    out_dir = Path(args.out)
-    raw_dir = out_dir / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    profile = args.profile or str(out_dir / "profile")
-
+    # 依赖检查必须早于建目录:否则在缺 playwright 的环境里
+    # 一次失败的抓取尝试也会留下空的 out/ 与 raw/
     if sync_playwright is None:
         raise SystemExit(
             "缺少 playwright 依赖。请先安装:\n"
             "  pip install playwright\n"
             "（仅 --check-sources 与 --help 不需要该依赖）")
+
+    out_dir = Path(args.out)
+    raw_dir = out_dir / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    profile = args.profile or str(out_dir / "profile")
 
     if args.login:
         run_login(chrome, profile, (args.site or ["zhipin"])[0])
