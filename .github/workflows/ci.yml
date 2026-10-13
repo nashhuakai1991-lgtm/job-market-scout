@@ -57,35 +57,7 @@ jobs:
         run: python scripts/scrape_jobs.py --check-sources
 
       - name: README 内部链接校验
-        run: |
-          python - <<'PY'
-          import re, subprocess, sys, unicodedata
-
-          md = open('README.md', encoding='utf-8').read()
-          # 以 git 索引为准（权威、且避开文件系统大小写/规范化差异）
-          tracked = subprocess.run(['git', 'ls-files', '-z'],
-                                   capture_output=True).stdout.split(b'\0')
-          norm = {unicodedata.normalize('NFC', p.decode('utf-8')) for p in tracked if p}
-
-          bad = []
-          for link in re.findall(r'\]\(([^)#]+)\)', md):
-              if link.startswith(('http', 'mailto')):
-                  continue
-              link = link.replace('%20', ' ')
-              if unicodedata.normalize('NFC', link) not in norm:
-                  bad.append(link)
-
-          print(f'已跟踪文件 {len(norm)} 个')
-          if bad:
-              print('以下链接在仓库中不存在:')
-              for b in bad:
-                  print('  -', b)
-              print('实际存在的示例文件:')
-              for n in sorted(x for x in norm if x.startswith('examples/')):
-                  print('  *', n)
-              sys.exit(1)
-          print('README 内部链接全部有效')
-          PY
+        run: python scripts/check_docs.py
 
       - name: 确认未提交登录态与产物
         run: |
