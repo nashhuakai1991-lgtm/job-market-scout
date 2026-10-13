@@ -2,6 +2,9 @@
 
 > 输入「职位 + 城市」，抓取真实在招岗位，告诉你**薪资期望合不合理、你能不能胜任、下一步该怎么走**。
 
+[![CI](https://github.com/nashhuakai1991-lgtm/job-market-scout/actions/workflows/ci.yml/badge.svg)](https://github.com/nashhuakai1991-lgtm/job-market-scout/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一个招聘市场侦察与求职决策工具。它不做简历投递，也不替你联系 HR —— 它只做一件事：把散落在招聘网站上的真实岗位抓下来，换算成你能读懂、能行动的结论。
 
 ---
@@ -20,19 +23,26 @@
 
 ## 效果示例
 
-仓库里有一份完整跑通的真实报告，可直接打开查看：
+仓库里有一份完整跑通的报告，可直接打开查看：
 
 → [`examples/北京装修项目经理/report.html`](examples/北京装修项目经理/report.html)（单文件，浏览器双击即可，无需联网）
 
-该案例的查询条件是：`北京 · 装修项目经理 · 10年经验 · 本科 · 二级建造师 · 期望月薪 1.8万`，
+> **示例说明**：岗位数据为真实抓取（75 个在招岗位，含公司名与薪资），
+> 但**求职者档案是虚构的**（大专 / 5 年 / 期望 1.3 万），用于保护提交者个人隐私。
+> 岗位信息本身来自公开招聘页面。
+
+该示例的查询条件是：`北京 · 装修项目经理 · 大专 · 5年经验 · 期望月薪 1.3万`，
 抓到 **75 个**真实岗位（智联 + 前程无忧双源），报告给出了这些结论：
 
 | 问题 | 报告给出的答案 |
 | --- | --- |
-| 期望 1.8万合理吗？ | **偏高**。市场 25/50/75/90 分位 = 1.0万 / 1.2万 / 1.5万 / 2.2万，仅 31% 岗位薪资上限达标 |
-| 我能胜任吗？ | **胜任度 60/100（中等）**。学历通过 98.7%、经验通过 70.7%、三项全过 52/75 |
-| 卡在哪？ | **经验高于要求**（22 个岗位嫌资历过高），而非学历或技能 |
-| 该补什么？ | **一级建造师**（样本中 6 个岗位明确要求）—— 可主动攻克的硬杠杆 |
+| 期望 1.3万合理吗？ | **合理**。市场 25/50/75/90 分位 = 1.0万 / 1.2万 / 1.5万 / 2.2万，可投岗位占比 60% |
+| 我能胜任吗？ | **胜任度 34/100（偏低）**。学历通过 58.7%、经验通过 69.3%、三项全过 28/75 |
+| 卡在哪？ | **学历不足（31 个岗位）**为主，兼有经验不足 11 个、经验过高 12 个 |
+| 该补什么？ | 学历是最大瓶颈；技能侧缺口集中在**一级建造师**、房建/办公建筑类项目经验 |
+
+注意这份示例得出了**偏负面的结论**（胜任度偏低）。这是刻意保留的——
+它说明工具不会为了好看而给高分，学历不匹配时就是会告诉你不匹配。
 
 ---
 
@@ -134,12 +144,14 @@ job-market-scout/
 ├── LICENSE                    MIT
 ├── SKILL.md                   技能说明：工作流、输出契约、自检清单
 ├── manifest.json              元数据与数据源清单
+├── .github/workflows/ci.yml   CI：语法检查 + 触发词评测 + 链接校验 + 敏感内容扫描
 ├── agents/interface.yaml      输入输出契约
 ├── scripts/
 │   ├── scrape_jobs.py         多源采集（1258 行）
 │   ├── match_analyze.py       匹配打分与建议（649 行）
 │   ├── career_plan.py         胜任度 + 职业规划（383 行）
-│   └── make_report.py         Markdown + HTML 报告（668 行）
+│   ├── make_report.py         Markdown + HTML 报告（668 行）
+│   └── eval_triggers.py       触发词评测（CI 门禁）
 ├── references/
 │   ├── platforms.md           各数据源实测可达性与数据源结构
 │   ├── scoring.md             评分口径、胜任度算法、调参指引
@@ -147,7 +159,7 @@ job-market-scout/
 ├── evals/
 │   └── trigger_cases.json     触发用例（23 条，实测 100% 准确率）
 └── examples/
-    └── 北京装修项目经理/        真实跑通的完整案例
+    └── 北京装修项目经理/        真实跑通的完整案例（岗位真实 / 档案虚构）
         ├── report.html
         ├── report.md
         └── career.json
@@ -155,6 +167,14 @@ job-market-scout/
 
 > 本项目同时是一个 WorkBuddy / Claude / OpenAI 兼容的 Agent Skill，
 > 把整个目录放到你的 skills 目录下即可被自动调用。
+
+### 本地跑 CI 检查
+
+```bash
+python -m compileall -q scripts/      # 语法
+python scripts/eval_triggers.py      # 触发词评测（低于阈值退出码非 0）
+python scripts/scrape_jobs.py --check-sources
+```
 
 ---
 
